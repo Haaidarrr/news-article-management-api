@@ -1,66 +1,140 @@
 const service = require("../services/articleService");
+const { schema } = require("../validators/articleValidator");
 
-async function lihatBerita(req, res) {
-  const data = await service.lihatSemuaBerita();
-  res.json(data);
-}
+//liat
+async function lihatBerita(req, res, next) {
 
-async function tambahBerita(req, res) {
+  try {
 
-  const { title, content, author } = req.body;
+    const data = await service.lihatSemuaBerita();
 
-  let thumbnail = null;
+    res.json({
+      success: true,
+      data
+    });
 
-  if (req.file) {
-    thumbnail = req.file.path;
+  } catch (error) {
+    next(error);
   }
 
-  const berita = await service.buatBeritaBaru({
-    title,
-    content,
-    author,
-    thumbnail
-  });
-
-  res.json(berita);
 }
 
-async function editBerita(req, res) {
+//nambah
+async function tambahBerita(req, res, next) {
 
-  const id = req.params.id;
+  try {
 
-  const data = await service.editBerita(id, req.body);
+    const validatedData = schema.parse(req.body);
 
-  res.json(data);
+    let thumbnail = null;
+
+    if (req.file) {
+      thumbnail = req.file.path;
+    }
+
+    const berita = await service.buatBeritaBaru({
+      ...validatedData,
+      thumbnail
+    });
+
+    res.status(201).json({
+      success: true,
+      data: berita
+    });
+
+  } catch (error) {
+    next(error);
+  }
+
 }
 
-async function hapusBerita(req, res) {
+//edit
+async function editBerita(req, res, next) {
 
-  const id = req.params.id;
+  try {
 
-  await service.deleteBerita(id);
+    const id = req.params.id;
 
-  res.json({
-    message: "berita berhasil dihapus"
-  });
+    const validatedData = schema.parse(req.body);
+
+    const data = await service.editBerita(id, validatedData);
+
+    res.json({
+      success: true,
+      data
+    });
+
+  } catch (error) {
+    next(error);
+  }
+
 }
 
-async function publishBerita(req, res) {
+//hapus
+async function hapusBerita(req, res, next) {
 
-  const id = req.params.id;
+  try {
 
-  const data = await service.publishBerita(id);
+    const id = req.params.id;
 
-  res.json(data);
+    await service.deleteBerita(id);
+
+    res.json({
+      success: true,
+      message: "Artikel berhasil dihapus"
+    });
+
+  } catch (error) {
+    next(error);
+  }
+
 }
 
-async function searchBerita(req, res) {
+//publish
+async function publishBerita(req, res, next) {
 
-  const keyword = req.query.q;
+  try {
 
-  const data = await service.searchBerita(keyword);
+    const id = req.params.id;
 
-  res.json(data);
+    const data = await service.publishBerita(id);
+
+    res.json({
+      success: true,
+      data
+    });
+
+  } catch (error) {
+    next(error);
+  }
+
+}
+
+//nyari
+async function searchBerita(req, res, next) {
+
+  try {
+
+    const keyword = req.query.q;
+
+    if (!keyword) {
+      return res.status(400).json({
+        success: false,
+        message: "Query q wajib diisi"
+      });
+    }
+
+    const data = await service.searchBerita(keyword);
+
+    res.json({
+      success: true,
+      data
+    });
+
+  } catch (error) {
+    next(error);
+  }
+
 }
 
 module.exports = {
